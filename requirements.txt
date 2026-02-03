@@ -1,5 +1,4 @@
 numpy
 scipy
 mutagen
-requests
 pyloudnorm

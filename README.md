@@ -1,6 +1,6 @@
 # Music Analyzer CLI
 
-A local-first CLI to analyze audio tracks in a folder for BPM, energy, danceability, loudness, integrated loudness (LUFS), loudness range (LRA), DR value, bitrate, MP3 bitrate status, valence, and key. Optionally enrich results using Spotify if credentials are provided.
+A local-first CLI to analyze audio tracks in a folder for BPM, energy, danceability, loudness, integrated loudness (LUFS), loudness range (LRA), DR value, bitrate, MP3 bitrate status, valence, and key.
 
 ## Requirements
 - macOS 15+
@@ -53,13 +53,6 @@ sudo ln -sf /Users/matt/music-analyzer/atracks /usr/local/bin/atracks
 Then run:
 ```bash
 atracks --csv
-```
-
-## Spotify enrichment (optional)
-```bash
-export SPOTIFY_CLIENT_ID=...
-export SPOTIFY_CLIENT_SECRET=...
-.venv/bin/python music_analyzer.py /path/to/music --spotify --csv
 ```
 
 ## Notes

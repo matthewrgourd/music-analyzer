@@ -13,7 +13,6 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from mutagen import File as MutagenFile
 import pyloudnorm as pyln
-import requests
 from scipy import signal
 
 AUDIO_EXTS = {".mp3", ".wav", ".flac", ".aiff", ".aif", ".m4a"}
@@ -322,53 +321,8 @@ def read_tags(path: Path) -> Tuple[Optional[str], Optional[str]]:
     return title, artist
 
 
-def spotify_token(client_id: str, client_secret: str) -> Optional[str]:
-    try:
-        resp = requests.post(
-            "https://accounts.spotify.com/api/token",
-            data={"grant_type": "client_credentials"},
-            auth=(client_id, client_secret),
-            timeout=10,
-        )
-        resp.raise_for_status()
-        return resp.json().get("access_token")
-    except Exception:
-        return None
-
-
-def spotify_lookup(title: Optional[str], artist: Optional[str], token: str) -> Optional[Dict[str, object]]:
-    if not title:
-        return None
-    query = f"track:{title}"
-    if artist:
-        query += f" artist:{artist}"
-    try:
-        resp = requests.get(
-            "https://api.spotify.com/v1/search",
-            params={"q": query, "type": "track", "limit": 1},
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        items = resp.json().get("tracks", {}).get("items", [])
-        if not items:
-            return None
-        track = items[0]
-        track_id = track.get("id")
-
-        features = requests.get(
-            f"https://api.spotify.com/v1/audio-features/{track_id}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10,
-        ).json()
-        return {"features": features}
-    except Exception:
-        return None
-
-
 def analyze_file(
     path: Path,
-    spotify: Optional[Dict[str, str]],
     fast: bool,
     min_mp3_kbps: int,
 ) -> TrackAnalysis:
@@ -391,22 +345,6 @@ def analyze_file(
     valence = estimate_valence(energy, key, spectral_centroid)
     danceability = estimate_danceability(energy, bpm, peak_strength)
 
-    if spotify:
-        token = spotify_token(spotify["id"], spotify["secret"])
-        if token:
-            data = spotify_lookup(title, artist, token)
-            if data and "features" in data:
-                feats = data["features"]
-                bpm = feats.get("tempo", bpm)
-                energy = feats.get("energy", energy)
-                danceability = feats.get("danceability", danceability)
-                loudness_db = feats.get("loudness", loudness_db)
-                valence = feats.get("valence", valence)
-                key_val = feats.get("key")
-                mode = feats.get("mode")
-                if key_val is not None and mode is not None:
-                    key_name = PITCH_CLASSES[int(key_val)]
-                    key = f"{key_name} {'major' if mode == 1 else 'minor'}"
     return TrackAnalysis(
         path=str(path),
         title=title,
@@ -530,7 +468,6 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Analyze audio tracks in a folder.")
     parser.add_argument("folder", nargs="?", default=".", help="Folder containing audio files (default: .)")
     parser.add_argument("--csv", action="store_true", help="Write analysis.csv to the folder")
-    parser.add_argument("--spotify", action="store_true", help="Enrich with Spotify if credentials are set")
     parser.add_argument("--fast", action="store_true", help="Skip LUFS/LRA loudness analysis for speed")
     parser.add_argument("--progress", action="store_true", help="Print progress to stderr")
     parser.add_argument("--tsv", action="store_true", help="Print tab-separated output")
@@ -558,21 +495,12 @@ def main() -> int:
         print(f"Unsupported path: {folder}", file=sys.stderr)
         return 1
 
-    spotify = None
-    if args.spotify:
-        cid = os.getenv("SPOTIFY_CLIENT_ID")
-        secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-        if cid and secret:
-            spotify = {"id": cid, "secret": secret}
-        else:
-            print("Spotify credentials not found in env vars. Skipping.", file=sys.stderr)
-
     analyses = []
     total = len(paths)
     for idx, path in enumerate(paths, start=1):
         if args.progress:
             print(f"[{idx}/{total}] {path.name}", file=sys.stderr)
-        analyses.append(analyze_file(path, spotify, args.fast, args.min_mp3_kbps))
+        analyses.append(analyze_file(path, args.fast, args.min_mp3_kbps))
     color_enabled = (sys.stdout.isatty() or args.force_color) and not args.no_color
     if args.tsv:
         print_tsv(analyses, not args.no_header)
