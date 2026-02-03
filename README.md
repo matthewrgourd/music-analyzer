@@ -1,6 +1,6 @@
 # Music Analyzer CLI
 
-A local-first CLI to analyze audio tracks in a folder for BPM, energy, danceability, loudness, integrated loudness (LUFS), loudness range (LRA), DR value, bitrate, MP3 bitrate status, valence, and key.
+A local-first CLI to analyze audio tracks in a folder for BPM, energy (0–100), danceability (0–100), valence (0–100), loudness, integrated loudness (LUFS), loudness range (LRA), DR value, bitrate, MP3 bitrate status, and key.
 
 ## Requirements
 - macOS 15+

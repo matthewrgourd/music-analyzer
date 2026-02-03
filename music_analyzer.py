@@ -49,8 +49,8 @@ class TrackAnalysis:
     title: Optional[str]
     artist: Optional[str]
     bpm: Optional[float]
-    energy: Optional[float]
-    danceability: Optional[float]
+    energy: Optional[int]
+    danceability: Optional[int]
     loudness_db: Optional[float]
     integrated_loudness_lufs: Optional[float]
     loudness_range_lu: Optional[float]
@@ -59,7 +59,7 @@ class TrackAnalysis:
     dr_rms_top20_db: Optional[float]
     bitrate_kbps: Optional[int]
     mp3_bitrate_status: str
-    valence: Optional[float]
+    valence: Optional[int]
     key: Optional[str]
 
 
@@ -198,6 +198,12 @@ def round_opt(value: Optional[float], ndigits: int) -> Optional[float]:
     if value is None:
         return None
     return round(float(value), ndigits)
+
+
+def pct_int(value: Optional[float]) -> Optional[int]:
+    if value is None:
+        return None
+    return int(round(float(value) * 100))
 
 
 def estimate_loudness_ebu(audio: np.ndarray, sr: int) -> Tuple[Optional[float], Optional[float]]:
@@ -350,8 +356,8 @@ def analyze_file(
         title=title,
         artist=artist,
         bpm=round_opt(bpm, 2),
-        energy=round_opt(energy, 3),
-        danceability=round_opt(danceability, 3),
+        energy=pct_int(energy),
+        danceability=pct_int(danceability),
         loudness_db=round_opt(loudness_db, 2),
         integrated_loudness_lufs=round_opt(integrated_loudness_lufs, 2),
         loudness_range_lu=round_opt(loudness_range_lu, 2),
@@ -360,7 +366,7 @@ def analyze_file(
         dr_rms_top20_db=dr_rms_top20_db,
         bitrate_kbps=bitrate_kbps,
         mp3_bitrate_status=mp3_bitrate_status,
-        valence=round_opt(valence, 3),
+        valence=pct_int(valence),
         key=key,
     )
 
