@@ -377,7 +377,9 @@ def write_csv(out_path: Path, analyses: List[TrackAnalysis]) -> None:
     with out_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(CSV_FIELDS)
-        for a in analyses:
+        total = len(analyses)
+        for idx, a in enumerate(analyses, start=1):
+            print(f"[csv {idx}/{total}] {Path(a.path).name}", file=sys.stderr)
             writer.writerow(
                 [
                     a.path,
